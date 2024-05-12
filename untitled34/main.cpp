@@ -19,3 +19,15 @@ void producer() {
         cond_var_.notify_one();
     }
 }
+
+void consumer() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cond_var_.wait(lock, [&]() { return !queue_.empty(); });
+        int value = queue_.front();
+        queue_.pop();
+        std::cout << "Consumed: " << value << std::endl;
+        lock.unlock();
+        cond_var_.notify_one();
+    }
+}

@@ -31,3 +31,13 @@ void consumer() {
         cond_var_.notify_one();
     }
 }
+
+int main() {
+    std::thread prod(producer);
+    std::thread cons(consumer);
+
+    prod.join();
+    cons.join();
+
+    return 0;
+}

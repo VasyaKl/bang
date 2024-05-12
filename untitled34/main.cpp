@@ -2,6 +2,8 @@
 #include <thread>
 #include <vector>
 
+int counter = 0;
+
 int main() {
     std::vector<std::thread> threads;
 
@@ -9,6 +11,8 @@ int main() {
         threads.emplace_back([i]() {
             int squared = i * i;
             std::cout << "Thread " << i << ": " << squared << std::endl;
+            counter += i;
+            std::cout << "Counter: " << counter << std::endl;
         });
     }
 

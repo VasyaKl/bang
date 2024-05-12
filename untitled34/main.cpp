@@ -1,35 +1,43 @@
 #include <iostream>
+#include <queue>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 
-std::mutex mutex1, mutex2;
+std::mutex mutex_;
+std::condition_variable cond_var_;
+std::queue<int> queue_;
+const int MAX_SIZE = 10;
 
-void threadA() {
-    mutex1.lock();
-    std::cout << "Thread A acquired mutex1" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    mutex2.lock();
-    std::cout << "Thread A acquired mutex2" << std::endl;
-    mutex2.unlock();
-    mutex1.unlock();
+void producer() {
+    for (int i = 1; i <= 20; ++i) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cond_var_.wait(lock, [&]() { return queue_.size() < MAX_SIZE; });
+        queue_.push(i);
+        std::cout << "Produced: " << i << std::endl;
+        lock.unlock();
+        cond_var_.notify_one();
+    }
 }
 
-void threadB() {
-    mutex2.lock();
-    std::cout << "Thread B acquired mutex2" << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    mutex1.lock();
-    std::cout << "Thread B acquired mutex1" << std::endl;
-    mutex1.unlock();
-    mutex2.unlock();
+void consumer() {
+    while (true) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cond_var_.wait(lock, [&]() { return !queue_.empty(); });
+        int value = queue_.front();
+        queue_.pop();
+        std::cout << "Consumed: " << value << std::endl;
+        lock.unlock();
+        cond_var_.notify_one();
+    }
 }
 
 int main() {
-    std::thread t1(threadA);
-    std::thread t2(threadB);
+    std::thread prod(producer);
+    std::thread cons(consumer);
 
-    t1.join();
-    t2.join();
+    prod.join();
+    cons.join();
 
     return 0;
 }

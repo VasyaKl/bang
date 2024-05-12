@@ -24,4 +24,12 @@ void threadB() {
     mutex2.unlock();
 }
 
+int main() {
+    std::thread t1(threadA);
+    std::thread t2(threadB);
 
+    t1.join();
+    t2.join();
+
+    return 0;
+}
